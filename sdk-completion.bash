@@ -28,27 +28,29 @@
 
 cache_expire_days=${SDKMAN_CACHE_EXPIRE_DAYS:-7}
 
-candidates_cache=~/.config/sdkman-bash-completion/.sdk-completion-candidates.cache
-a_versions_cache=~/.config/sdkman-bash-completion/.sdk-completion-a-versions.cache
-i_versions_cache=~/.config/sdkman-bash-completion/.sdk-completion-i-versions.cache
+completion_dir=~/.config/sdkman-bash-completion
+
+candidates_cache=.sdk-completion-candidates.cache
+a_versions_cache=.sdk-completion-a-versions.cache
+i_versions_cache=.sdk-completion-i-versions.cache
 
 _is_cache_expired(){
-	test "$(find -wholename "$1" -atime $cache_expire_days)"
+	test ! "$(find $completion_dir -name $1 -not -ctime +$cache_expire_days 2>/dev/null)"
 }
 
 _get_candidates(){
-	_is_cache_expired "$candidates_cache" && sdk list | sed -n "s/ *\$ sdk install \([a-z]\+\)$/\1/p" > "$candidates_cache"
-	cat "$candidates_cache"
+	_is_cache_expired "$candidates_cache" && sdk list | sed -n "s/ *\$ sdk install \([a-z]\+\)$/\1/p" > "$completion_dir/$candidates_cache"
+	cat "$completion_dir/$candidates_cache"
 }
 
 _get_installed_versions(){
-	_is_cache_expired "$a_versions_cache" && sdk ls $1 | sed -n "/installed/{s/ //g;s/^/$1|/p}" | cut -d '|' -f 1,7 > "$a_versions_cache"
-	sed -n "s/^$1|//p" "$a_versions_cache"
+	_is_cache_expired "$a_versions_cache" && sdk ls $1 | sed -n "/installed/{s/ //g;s/^/$1|/p}" | cut -d '|' -f 1,7 > "$completion_dir/$a_versions_cache"
+	sed -n "s/^$1|//p" "$completion_dir/$a_versions_cache"
 }
 
 _get_available_versions(){
-	_is_cache_expired "$i_versions_cache" && sdk ls $1 | sed -n "/^---/,/^===/{/installed/d;/ /{s/ //g;s/^/$1|/p}}" | cut -d '|' -f 1,7 > "$i_versions_cache"
-	sed -n "s/^$1|//p" "$i_versions_cache"
+	_is_cache_expired "$i_versions_cache" && sdk ls $1 | sed -n "/^---/,/^===/{/installed/d;/ /{s/ //g;s/^/$1|/p}}" | cut -d '|' -f 1,7 > "$completion_dir/$i_versions_cache"
+	sed -n "s/^$1|//p" "$completion_dir/$i_versions_cache"
 }
 
 _get_versions(){
